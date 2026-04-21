@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PeedPadPark</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0a0e1a; --surface:#111827; --card:#161d2e; --border:#1e2d45;
+  --accent:#00d4ff; --accent2:#7c3aed; --green:#10b981;
+  --orange:#f59e0b; --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
+  --mono:'Space Mono',monospace; --thai:'Noto Sans Thai',sans-serif;
+}
+body{font-family:var(--thai);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:20px}
+.sp-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 0 40px rgba(0,212,255,.4);animation:spPulse 1.5s ease-in-out infinite}
+@keyframes spPulse{0%,100%{box-shadow:0 0 20px rgba(0,212,255,.3)}50%{box-shadow:0 0 50px rgba(0,212,255,.6)}}
+.sp-txt{color:var(--muted);font-size:.78rem;letter-spacing:2px;font-family:var(--mono)}
+.dots{display:inline-flex;gap:5px}.dots span{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotB 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotB{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* LOGIN */
+#loginPage{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:var(--bg)}
+.login-glow{position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,.12),transparent 70%);top:-70px;left:50%;transform:translateX(-50%);pointer-events:none}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:36px 32px;width:340px;position:relative;box-shadow:0 0 60px rgba(0,212,255,.06);animation:fadeUp .3s ease}
+.login-logo{text-align:center;margin-bottom:28px}
+.licon{width:60px;height:60px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 8px 24px rgba(0,212,255,.3)}
+.login-logo h2{font-family:var(--mono);font-size:1.05rem;color:var(--accent);letter-spacing:2px}
+.login-logo p{font-size:.72rem;color:var(--muted);margin-top:4px}
+.field-group{margin-bottom:14px}
+.field-label{font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px}
+input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:12px;font-family:var(--thai);font-size:.9rem;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.12)}
+input:disabled{opacity:.5;cursor:not-allowed}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-family:var(--thai);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0098cc);color:#0a0e1a;box-shadow:0 4px 20px rgba(0,212,255,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,212,255,.4)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+#loginError{color:var(--red);font-size:.75rem;text-align:center;margin-top:10px;display:none}
+
+/* APP */
+#app{display:none;position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hdr-title{font-family:var(--mono);font-size:.82rem;color:var(--accent);letter-spacing:1.5px}
+.hdr-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulDot 2s infinite}
+@keyframes pulDot{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{box-shadow:0 0 5px rgba(16,185,129,0)}}
+.btn-logout{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-size:.75rem;cursor:pointer;font-family:var(--thai);transition:all .2s;width:auto;margin:0}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+.page{display:none;padding:18px 16px 100px;max-width:540px;margin:0 auto}
+.page.active{display:block;animation:fadeUp .22s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.badge{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2);padding:2px 10px;border-radius:20px;font-size:.68rem;font-family:var(--mono)}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:1.6rem;font-weight:700;display:block}
+.stat-lbl{font-size:.62rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.c-green{color:var(--green)}.c-red{color:var(--red)}.c-orange{color:var(--orange)}.c-accent{color:var(--accent)}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.card:hover{border-color:#2a3f5f;transform:translateY(-1px)}
+.card-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.bar-green{background:var(--green);box-shadow:2px 0 10px rgba(16,185,129,.4)}
+.bar-red{background:var(--red);box-shadow:2px 0 10px rgba(239,68,68,.4)}
+.bar-orange{background:var(--orange);box-shadow:2px 0 10px rgba(245,158,11,.4)}
+.bar-blue{background:var(--accent);box-shadow:2px 0 10px rgba(0,212,255,.4)}
+.card-inner{padding-left:10px}
+.slot-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.slot-id{font-family:var(--mono);font-size:1.1rem;font-weight:700}
+.pill{padding:4px 12px;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.pill-free{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.pill-occupied{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.pill-reserved{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.25)}
+
+/* TIMER */
+.timer-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between}
+.t-block{text-align:center;flex:1}
+.t-num{font-family:var(--mono);font-size:1.85rem;font-weight:700;color:var(--accent);display:block;line-height:1}
+.t-lbl{font-size:.58rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;display:block}
+.t-sep{font-family:var(--mono);font-size:1.4rem;color:var(--border);flex:0;padding-bottom:5px}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:.82rem}
+.info-row:last-child{border-bottom:none}
+.ik{color:var(--muted);font-size:.78rem}.iv{font-family:var(--mono);font-size:.78rem}
+.dbar-wrap{margin-top:10px}
+.dbar-hdr{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:5px}
+.dbar-bg{height:5px;background:var(--surface);border-radius:3px;overflow:hidden}
+.dbar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.fee-wrap{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,58,237,.08));border:1px solid rgba(0,212,255,.18);border-radius:10px;padding:8px 16px;margin-top:12px}
+.fee-num{font-family:var(--mono);font-size:1.25rem;font-weight:700;color:var(--accent)}
+.fee-unit{color:var(--muted);font-size:.78rem}
+.book-btn{width:100%;margin-top:14px;padding:11px;border-radius:12px;border:none;font-family:var(--thai);font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s}
+.book-free{background:linear-gradient(135deg,var(--green),#059669);color:#fff;box-shadow:0 4px 16px rgba(16,185,129,.25)}
+.book-free:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,185,129,.35)}
+.book-dis{background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:not-allowed}
+
+/* HISTORY */
+.hist-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.hist-icon{width:40px;height:40px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.14);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hist-info{flex:1}
+.hist-slot{font-family:var(--mono);font-size:.82rem;color:var(--accent)}
+.hist-meta{font-size:.7rem;color:var(--muted);margin-top:3px}
+.hist-fee{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--green)}
+.hist-fee span{font-size:.68rem;color:var(--muted);font-family:var(--thai);font-weight:400}
+
+/* ── PROFILE ── */
+.profile-hero{
+  background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,58,237,.08));
+  border:1px solid rgba(0,212,255,.15);
+  border-radius:22px;padding:24px 20px;margin-bottom:16px;
+  display:flex;align-items:center;gap:18px;
+}
+.profile-avatar{
+  width:64px;height:64px;border-radius:18px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;box-shadow:0 6px 20px rgba(0,212,255,.3);
+  font-weight:700;font-family:var(--mono);color:#0a0e1a;
+}
+.profile-info{}
+.profile-name{font-size:1.1rem;font-weight:700;color:var(--text)}
+.profile-role{
+  display:inline-block;margin-top:4px;
+  background:rgba(0,212,255,.1);color:var(--accent);
+  border:1px solid rgba(0,212,255,.2);
+  padding:2px 10px;border-radius:20px;font-size:.65rem;
+  font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;
+}
+.profile-email{font-size:.75rem;color:var(--muted);margin-top:5px}
+
+/* Summary cards */
+.profile-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.sum-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:16px 14px;text-align:center;position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.sum-card::before{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:60px;height:60px;border-radius:50%;opacity:.06;
+}
+.sum-card.s-blue::before{background:var(--accent)}
+.sum-card.s-green::before{background:var(--green)}
+.sum-card.s-orange::before{background:var(--orange)}
+.sum-card.s-purple::before{background:var(--accent2)}
+.sum-num{font-family:var(--mono);font-size:1.5rem;font-weight:700;display:block;line-height:1}
+.sum-lbl{font-size:.62rem;color:var(--muted);letter-spacing:.8px;margin-top:5px;display:block}
+.sum-sub{font-size:.6rem;color:var(--muted);margin-top:2px;display:block;opacity:.7}
+
+/* loading shimmer for summary */
+.sum-loading .sum-num{
+  background:var(--border);border-radius:6px;color:transparent;
+  animation:shimmer 1.2s infinite;
+}
+@keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.9}}
+
+/* Unpaid banner */
+.unpaid-banner{
+  background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(245,158,11,.08));
+  border:1px solid rgba(239,68,68,.25);
+  border-radius:16px;padding:16px 18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.unpaid-left{}
+.unpaid-label{font-size:.68rem;color:var(--red);font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.unpaid-amount{font-family:var(--mono);font-size:1.6rem;font-weight:700;color:var(--red);line-height:1.2}
+.unpaid-sub{font-size:.7rem;color:var(--muted);margin-top:2px}
+.pay-btn{
+  background:linear-gradient(135deg,var(--red),#c53030);color:#fff;
+  border:none;border-radius:12px;padding:10px 18px;
+  font-family:var(--thai);font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;width:auto;margin:0;
+}
+.pay-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(239,68,68,.35)}
+
+/* Profile form */
+.pf-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:12px}
+.pf-title{font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.pf-edit-btn{
+  background:rgba(0,212,255,.1);color:var(--accent);
+  border:1px solid rgba(0,212,255,.2);border-radius:8px;
+  padding:4px 12px;font-size:.7rem;cursor:pointer;
+  font-family:var(--thai);transition:all .2s;width:auto;margin:0;
+}
+.pf-edit-btn:hover{background:rgba(0,212,255,.2)}
+.pf-field{margin-bottom:12px}
+.pf-field:last-child{margin-bottom:0}
+.pf-label{font-size:.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
+.pf-input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:11px 14px;border-radius:10px;
+  font-family:var(--thai);font-size:.88rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.pf-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.12)}
+.pf-input:disabled{opacity:.6;cursor:default;background:var(--bg)}
+.pf-save-btn{
+  width:100%;margin-top:14px;padding:12px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--accent),#0098cc);
+  color:#0a0e1a;font-family:var(--thai);font-size:.92rem;font-weight:700;
+  cursor:pointer;transition:all .2s;display:none;
+}
+.pf-save-btn:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,212,255,.3)}
+.pf-save-btn.show{display:block}
+
+/* A1 Live Card */
+.a1-live-card{
+  background:linear-gradient(135deg,rgba(0,212,255,.05),rgba(124,58,237,.05));
+  border:1px solid rgba(0,212,255,.2);
+  border-radius:18px;padding:18px;margin-bottom:16px;position:relative;overflow:hidden;
+}
+.a1-live-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+.a1-live-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.a1-live-title{font-family:var(--mono);font-size:.75rem;color:var(--accent);letter-spacing:1.5px}
+.a1-live-pill{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+  padding:3px 10px;border-radius:20px;font-size:.62rem;color:var(--green);
+  font-family:var(--mono);
+}
+.a1-live-pill.occupied{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:var(--red)}
+.a1-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulDot 1.5s infinite}
+.a1-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.a1-metric{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center}
+.a1-metric-num{font-family:var(--mono);font-size:1rem;font-weight:700;display:block}
+.a1-metric-lbl{font-size:.56rem;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-top:3px;display:block}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:10px 20px;font-size:.82rem;
+  z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-icon{font-size:2.8rem;opacity:.35;margin-bottom:10px}
+.empty p{font-size:.82rem}
+
+/* NAV */
+.nav-bottom{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;padding:11px 8px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-family:var(--thai);font-size:.62rem;transition:color .2s;display:flex;flex-direction:column;align-items:center;gap:4px;width:auto;margin:0;border-radius:0}
+.nav-item .ni{font-size:20px}
+.nav-item:hover{color:var(--text)}
+.nav-item.active{color:var(--accent)}
+.nav-item.active .ni{filter:drop-shadow(0 0 4px rgba(0,212,255,.6))}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-icon">🅿️</div>
+  <div class="sp-txt">SMART PARKING PRO</div>
+  <div class="dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <div style="position:relative">
+    <div class="login-glow"></div>
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="licon">🅿️</div>
+        <h2>PeedPadPark</h2>
+        <p>Realtime Monitoring System</p>
+      </div>
+      <div class="field-group"><label class="field-label">Email</label><input id="loginEmail" type="email" placeholder="your@email.com"></div>
+      <div class="field-group"><label class="field-label">Password</label><input id="loginPassword" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" id="btnLogin">เข้าสู่ระบบ</button>
+      <button class="btn btn-ghost"   id="btnRegister">สมัครสมาชิก</button>
+      <p id="loginError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="hdr-left">
+      <div class="hdr-icon">🅿️</div>
+      <div>
+        <div class="hdr-title" id="hdrTitle">OVERVIEW</div>
+        <div class="hdr-sub"><span class="online-dot"></span>Realtime Connected</div>
+      </div>
+    </div>
+    <button class="btn-logout" id="btnLogout">ออกจากระบบ</button>
+  </header>
+
+  <!-- HOME -->
+  <div id="home" class="page active">
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-num c-green"  id="stFree">—</span><span class="stat-lbl">ว่าง</span></div>
+      <div class="stat-card"><span class="stat-num c-red"    id="stOcc">—</span><span class="stat-lbl">จอดอยู่</span></div>
+      <div class="stat-card"><span class="stat-num c-orange" id="stAll">—</span><span class="stat-lbl">ทั้งหมด</span></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-title">Active Sessions</span><span class="badge" id="badgeActive">0 ช่อง</span></div>
+    <div id="homeList"><div class="empty"><div class="empty-icon">🅿️</div><p>ไม่มีรถจอดในขณะนี้</p></div></div>
+  </div>
+
+  <!-- BOOKING -->
+  <div id="booking" class="page">
+    <div class="sec-hdr"><span class="sec-title">ที่จอดรถทั้งหมด</span><span class="badge" id="badgeSlots">0 ช่อง</span></div>
+    <div id="slotList"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history" class="page">
+    <div class="sec-hdr"><span class="sec-title">ประวัติการจอด</span><span class="badge" id="badgeHist">—</span></div>
+    <div id="histList"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="profile" class="page">
+
+    <!-- Hero -->
+    <div class="profile-hero">
+      <div class="profile-avatar" id="pfAvatar">?</div>
+      <div class="profile-info">
+        <div class="profile-name" id="pfName">—</div>
+        <span class="profile-role" id="pfRole">USER</span>
+        <div class="profile-email" id="pfEmailDisp">—</div>
+      </div>
+    </div>
+
+    <!-- Unpaid banner -->
+    <div class="unpaid-banner" id="unpaidBanner" style="display:none">
+      <div class="unpaid-left">
+        <div class="unpaid-label">💳 ยอดค้างชำระ</div>
+        <div class="unpaid-amount" id="unpaidAmt">0 <span style="font-size:.9rem">บาท</span></div>
+        <div class="unpaid-sub" id="unpaidSessions">0 รายการ</div>
+      </div>
+      <button class="pay-btn" id="btnPay">ชำระเงิน</button>
+    </div>
+
+    <!-- ── A1 Live Status ── -->
+    <div class="sec-hdr"><span class="sec-title">เซ็นเซอร์ A1 · Live</span></div>
+    <div class="a1-live-card">
+      <div class="a1-live-header">
+        <span class="a1-live-title">SENSOR A1 · REALTIME</span>
+        <span class="a1-live-pill" id="a1LivePill">
+          <span class="a1-live-dot"></span>
+          <span id="a1LiveStatus">กำลังโหลด...</span>
+        </span>
+      </div>
+      <div class="a1-metrics">
+        <div class="a1-metric">
+          <span class="a1-metric-num c-accent" id="a1Dist">—</span>
+          <span class="a1-metric-lbl">cm</span>
+        </div>
+        <div class="a1-metric">
+          <span class="a1-metric-num c-orange" id="a1SessionTime">—</span>
+          <span class="a1-metric-lbl">เวลาจอด</span>
+        </div>
+        <div class="a1-metric">
+          <span class="a1-metric-num c-green" id="a1SessionFee">—</span>
+          <span class="a1-metric-lbl">บาท (เซสชันนี้)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary (computed from history) -->
+    <div class="sec-hdr">
+      <span class="sec-title">สรุปการใช้งาน · A1</span>
+      <span class="badge" id="summaryBadge">A1 Only</span>
+    </div>
+    <div class="profile-summary" id="summaryGrid">
+      <div class="sum-card s-blue sum-loading">
+        <span class="sum-num c-accent" id="sumVisits">—</span>
+        <span class="sum-lbl">ครั้งทั้งหมด</span>
+        <span class="sum-sub">Total visits (A1)</span>
+      </div>
+      <div class="sum-card s-green sum-loading">
+        <span class="sum-num c-green" id="sumPaid">—</span>
+        <span class="sum-lbl">ชำระแล้ว (บาท)</span>
+        <span class="sum-sub">Total paid</span>
+      </div>
+      <div class="sum-card s-orange sum-loading">
+        <span class="sum-num c-orange" id="sumHours">—</span>
+        <span class="sum-lbl">ชั่วโมงสะสม</span>
+        <span class="sum-sub">Total hours (A1)</span>
+      </div>
+      <div class="sum-card s-purple sum-loading">
+        <span class="sum-num" style="color:var(--accent2)" id="sumAvg">—</span>
+        <span class="sum-lbl">เฉลี่ย/ครั้ง (บาท)</span>
+        <span class="sum-sub">Avg per visit</span>
+      </div>
+    </div>
+
+    <!-- Profile Form -->
+    <div class="pf-card">
+      <div class="pf-title">
+        ข้อมูลส่วนตัว
+        <button class="pf-edit-btn" id="pfEditBtn">✏️ แก้ไข</button>
+      </div>
+      <div class="pf-field">
+        <label class="pf-label">ชื่อ</label>
+        <input class="pf-input" id="pfFirstName" placeholder="ชื่อ" disabled>
+      </div>
+      <div class="pf-field">
+        <label class="pf-label">นามสกุล</label>
+        <input class="pf-input" id="pfLastName" placeholder="นามสกุล" disabled>
+      </div>
+      <div class="pf-field">
+        <label class="pf-label">อีเมล</label>
+        <input class="pf-input" id="pfEmail" type="email" placeholder="อีเมล" disabled>
+      </div>
+      <div class="pf-field">
+        <label class="pf-label">เบอร์โทร</label>
+        <input class="pf-input" id="pfPhone" type="tel" placeholder="0xx-xxx-xxxx" disabled>
+      </div>
+      <button class="pf-save-btn" id="pfSaveBtn">💾 บันทึกข้อมูล</button>
+    </div>
+
+  </div><!-- /profile -->
+
+  <!-- NAV -->
+  <div class="nav-bottom">
+    <button class="nav-item active" id="nav0"><span class="ni">🏠</span>หน้าหลัก</button>
+    <button class="nav-item"        id="nav1"><span class="ni">🅿️</span>จอง</button>
+    <button class="nav-item"        id="nav2"><span class="ni">📋</span>ประวัติ</button>
+    <button class="nav-item"        id="nav3"><span class="ni">👤</span>โปรไฟล์</button>
+  </div>
+</div>
+
+<script>
+var FB_SCRIPTS = [
+  'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
+];
+
+function loadScript(src, cb) {
+  var s = document.createElement('script');
+  s.src = src; s.onload = cb;
+  s.onerror = function() {
+    document.getElementById('splash').innerHTML =
+      '<p style="color:#ef4444;font-size:.9rem;padding:20px;text-align:center">โหลด Firebase ไม่ได้<br>กรุณาตรวจสอบอินเตอร์เน็ต</p>';
+  };
+  document.body.appendChild(s);
+}
+function loadSeq(scripts, i, done) {
+  if (i >= scripts.length) { done(); return; }
+  loadScript(scripts[i], function() { loadSeq(scripts, i+1, done); });
+}
+
+loadSeq(FB_SCRIPTS, 0, function() {
+
+  firebase.initializeApp({
+    apiKey:      'AIzaSyBAG4RpdYmK6NRVPVsSicb4Awyj_c1yGtU',
+    databaseURL: 'https://project-win-b1328-default-rtdb.firebaseio.com'
+  });
+
+  var db   = firebase.database();
+  var auth = firebase.auth();
+
+  var currentUser  = null;
+  var currentRole  = 'user';
+  var timerHandles = {};
+  var lastData     = null;
+  var pfEditing    = false;
+  var a1LiveHandle = null;   // realtime listener handle สำหรับ A1
+
+  var RATE      = 20;
+  var THRESHOLD = 25;
+
+  document.getElementById('splash').style.display = 'none';
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ── Toast ── */
+  function toast(msg, type) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (type||'success');
+    setTimeout(function(){ t.className = 'toast'; }, 2800);
+  }
+
+  function showErr(msg) {
+    var el = $('loginError');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  /* ── Auth buttons ── */
+  $('btnLogin').addEventListener('click', function() {
+    var e = $('loginEmail').value.trim(), p = $('loginPassword').value;
+    if (!e||!p) { showErr('กรุณากรอก Email และ Password'); return; }
+    auth.signInWithEmailAndPassword(e, p).catch(function(err){ showErr(err.message); });
+  });
+
+  $('btnRegister').addEventListener('click', function() {
+    var e = $('loginEmail').value.trim(), p = $('loginPassword').value;
+    if (!e||!p) { showErr('กรุณากรอก Email และ Password'); return; }
+    auth.createUserWithEmailAndPassword(e, p)
+      .then(function(res) {
+        db.ref('users/'+res.user.uid).set({
+          email: e, role: 'user',
+          firstName: '', lastName: '', phone: '',
+          totalPaid: 0, unpaid: 0, visits: 0, totalSec: 0
+        });
+        toast('สมัครสำเร็จ! กรุณาเข้าสู่ระบบ');
+      })
+      .catch(function(err){ showErr(err.message); });
+  });
+
+  $('btnLogout').addEventListener('click', function() { auth.signOut(); });
+
+  /* ── Auth state ── */
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      currentUser = user;
+      db.ref('users/'+user.uid).once('value').then(function(snap) {
+        var d = snap.val() || {};
+        currentRole = d.role || 'user';
+
+        var patch = {};
+        if (!d.email)                    patch.email      = user.email;
+        if (d.totalPaid  === undefined)  patch.totalPaid  = 0;
+        if (d.unpaid     === undefined)  patch.unpaid     = 0;
+        if (d.visits     === undefined)  patch.visits     = 0;
+        if (d.totalSec   === undefined)  patch.totalSec   = 0;
+        if (Object.keys(patch).length)   db.ref('users/'+user.uid).update(patch);
+
+        $('loginPage').style.display = 'none';
+        $('app').style.display = 'block';
+        startListener();
+      });
+    } else {
+      currentUser = null;
+      try { db.ref('parking').off(); } catch(e){}
+      if (a1LiveHandle) { db.ref('parking/A1').off('value', a1LiveHandle); a1LiveHandle = null; }
+      Object.values(timerHandles).forEach(clearInterval);
+      timerHandles = {};
+      $('loginPage').style.display = 'flex';
+      $('app').style.display = 'none';
+    }
+  });
+
+  /* ── Nav ── */
+  var pages  = ['home','booking','history','profile'];
+  var titles = ['OVERVIEW','PARKING','HISTORY','PROFILE'];
+
+  function showPage(idx) {
+    pages.forEach(function(id, i) {
+      $(id).classList.toggle('active', i===idx);
+      $('nav'+i).classList.toggle('active', i===idx);
+    });
+    $('hdrTitle').textContent = titles[idx];
+    if (idx===2) loadHistory();
+    if (idx===3) loadProfile();
+  }
+  for (var ni=0; ni<4; ni++) {
+    (function(i){ $('nav'+i).addEventListener('click', function(){ showPage(i); }); })(ni);
+  }
+
+  /* ── Realtime parking ── */
+  function startListener() {
+    db.ref('parking').on('value', function(snap) {
+      var data = snap.val(); if (!data) return;
+      Object.keys(data).forEach(function(id) {
+        var slot = data[id];
+        var dist = parseFloat(slot.distance) || 999;
+        var st   = slot.status;
+        if (dist < THRESHOLD && st !== 'occupied') {
+          db.ref('parking/'+id).update({ status:'occupied', startTime: Date.now() });
+        } else if (dist >= THRESHOLD && st === 'occupied') {
+          if (lastData && lastData[id]) saveHistory(id, lastData[id]);
+          db.ref('parking/'+id).update({ status:'free', startTime: null });
+        }
+      });
+      lastData = JSON.parse(JSON.stringify(data));
+      renderStats(data); renderHome(data); renderBooking(data);
+    });
+  }
+
+  /* ── Stats ── */
+  function renderStats(data) {
+    var s = Object.values(data);
+    $('stAll').textContent  = s.length;
+    $('stFree').textContent = s.filter(function(x){ return x.status==='free'; }).length;
+    $('stOcc').textContent  = s.filter(function(x){ return x.status==='occupied'; }).length;
+  }
+
+  /* ── Home ── */
+  function pad(n){ return n<10?'0'+n:''+n; }
+
+  function renderHome(data) {
+    Object.values(timerHandles).forEach(clearInterval); timerHandles = {};
+    var occ = Object.keys(data).filter(function(id){ return data[id].status==='occupied'; });
+    $('badgeActive').textContent = occ.length+' ช่อง';
+    if (!occ.length) {
+      $('homeList').innerHTML='<div class="empty"><div class="empty-icon">🅿️</div><p>ไม่มีรถจอดในขณะนี้</p></div>';
+      return;
+    }
+    $('homeList').innerHTML='';
+    occ.sort().forEach(function(id) {
+      var slot=data[id], dist=parseFloat(slot.distance)||0;
+      var pct=Math.min(100,(dist/40)*100);
+      var dcol=dist<15?'var(--red)':dist<25?'var(--orange)':'var(--green)';
+      var div=document.createElement('div'); div.className='card';
+      div.innerHTML=
+        '<div class="card-bar bar-red"></div>'+
+        '<div class="card-inner">'+
+          '<div class="slot-hdr"><span class="slot-id">ช่อง '+id+'</span><span class="pill pill-occupied">OCCUPIED</span></div>'+
+          '<div class="timer-wrap">'+
+            '<div class="t-block"><span class="t-num" id="th-'+id+'">00</span><span class="t-lbl">ชม.</span></div>'+
+            '<div class="t-sep">:</div>'+
+            '<div class="t-block"><span class="t-num" id="tm-'+id+'">00</span><span class="t-lbl">นาที</span></div>'+
+            '<div class="t-sep">:</div>'+
+            '<div class="t-block"><span class="t-num" id="ts-'+id+'">00</span><span class="t-lbl">วิ</span></div>'+
+          '</div>'+
+          '<div class="dbar-wrap">'+
+            '<div class="dbar-hdr"><span>เซ็นเซอร์</span>'+
+            '<span id="dv-'+id+'" style="font-family:var(--mono);color:'+dcol+'">'+(dist?dist.toFixed(1)+' cm':'—')+'</span></div>'+
+            '<div class="dbar-bg"><div class="dbar-fill" id="db-'+id+'" style="width:'+pct+'%;background:'+dcol+'"></div></div>'+
+          '</div>'+
+          '<div class="fee-wrap">💰 <span class="fee-num" id="fee-'+id+'">0</span><span class="fee-unit"> บาท (ประมาณ)</span></div>'+
+        '</div>';
+      $('homeList').appendChild(div);
+      startTimer(id, slot.startTime||Date.now());
+    });
+  }
+
+  function startTimer(id, startTime) {
+    function tick() {
+      if (!$('th-'+id)){ clearInterval(timerHandles[id]); return; }
+      var sec=Math.floor((Date.now()-startTime)/1000);
+      $('th-'+id).textContent=pad(Math.floor(sec/3600));
+      $('tm-'+id).textContent=pad(Math.floor((sec%3600)/60));
+      $('ts-'+id).textContent=pad(sec%60);
+      var f=$('fee-'+id); if(f) f.textContent=Math.max(1,Math.ceil(sec/3600))*RATE;
+    }
+    tick(); timerHandles[id]=setInterval(tick,1000);
+  }
+
+  /* ── Booking ── */
+  function renderBooking(data) {
+    var keys=Object.keys(data).sort();
+    $('badgeSlots').textContent=keys.length+' ช่อง';
+    $('slotList').innerHTML='';
+    keys.forEach(function(id) {
+      var slot=data[id], st=slot.status, isFree=st==='free';
+      var barCls=isFree?'bar-green':st==='occupied'?'bar-red':'bar-orange';
+      var pillCls=isFree?'pill-free':st==='occupied'?'pill-occupied':'pill-reserved';
+      var pillTxt=isFree?'ว่าง':st==='occupied'?'มีรถจอด':'จองแล้ว';
+      var dist=parseFloat(slot.distance)||0;
+      var div=document.createElement('div'); div.className='card';
+      div.innerHTML=
+        '<div class="card-bar '+barCls+'"></div>'+
+        '<div class="card-inner">'+
+          '<div class="slot-hdr"><span class="slot-id">ช่อง '+id+'</span><span class="pill '+pillCls+'">'+pillTxt+'</span></div>'+
+          '<div class="info-row"><span class="ik">เซ็นเซอร์</span><span class="iv">'+(dist?dist.toFixed(1)+' cm':'—')+'</span></div>'+
+          '<div class="info-row"><span class="ik">อัตราค่าจอด</span><span class="iv">'+RATE+' บาท/ชม.</span></div>'+
+          (isFree?'<button class="book-btn book-free" data-id="'+id+'">จองช่องนี้</button>':'<button class="book-btn book-dis" disabled>ไม่ว่าง</button>')+
+        '</div>';
+      var btn=div.querySelector('.book-free');
+      if(btn) btn.addEventListener('click',function(){ reserve(this.dataset.id); });
+      $('slotList').appendChild(div);
+    });
+  }
+
+  function reserve(id) {
+    if(!currentUser) return;
+    if(confirm('จองช่อง '+id+' ใช่หรือไม่?')) {
+      db.ref('parking/'+id).update({ status:'reserved', reservedBy: currentUser.uid });
+      toast('จองช่อง '+id+' สำเร็จ ✅');
+    }
+  }
+
+  /* ── History ── */
+  function saveHistory(id, slotData) {
+    if (!slotData.startTime) return;
+    var sec = Math.floor((Date.now() - slotData.startTime) / 1000);
+    var fee = Math.max(1, Math.ceil(sec / 3600)) * RATE;
+
+    /* ✅ บันทึกลง history พร้อม userId และ slotId ที่ถูกต้อง */
+    db.ref('history').push({
+      slotId:    id,
+      duration:  sec,
+      fee:       fee,
+      date:      new Date().toISOString(),
+      userId:    currentUser ? currentUser.uid : null,
+      paid:      false
+    });
+
+    /* ✅ อัปเดต user node เฉพาะ unpaid (visits/totalSec คำนวณจาก history ตอนแสดงผล) */
+    if (currentUser) {
+      db.ref('users/'+currentUser.uid).once('value').then(function(snap) {
+        var d = snap.val() || {};
+        db.ref('users/'+currentUser.uid).update({
+          unpaid:   (d.unpaid   || 0) + fee,
+          visits:   (d.visits   || 0) + 1,
+          totalSec: (d.totalSec || 0) + sec
+        });
+      });
+    }
+  }
+
+  function loadHistory() {
+    $('histList').innerHTML = '<div class="empty"><div class="dots"><span></span><span></span><span></span></div></div>';
+    db.ref('history').orderByKey().limitToLast(30).once('value').then(function(snap) {
+      var data = snap.val();
+      $('badgeHist').textContent = data ? Object.keys(data).length+' รายการ' : '0 รายการ';
+      if (!data) {
+        $('histList').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>ยังไม่มีประวัติ</p></div>';
+        return;
+      }
+      $('histList').innerHTML = '';
+      Object.values(data).reverse().forEach(function(h) {
+        var sec=h.duration||0, hh=Math.floor(sec/3600), mm=Math.floor((sec%3600)/60);
+        var date=h.date
+          ? new Date(h.date).toLocaleString('th-TH',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'})
+          : '—';
+        var div=document.createElement('div'); div.className='hist-card';
+        div.innerHTML=
+          '<div class="hist-icon">'+(h.paid?'✅':'🚗')+'</div>'+
+          '<div class="hist-info">'+
+            '<div class="hist-slot">ช่อง '+h.slotId+'</div>'+
+            '<div class="hist-meta">⏱ '+hh+'h '+mm+'m &nbsp;|&nbsp; '+date+(h.paid?' &nbsp;· <span style="color:var(--green)">ชำระแล้ว</span>':'')+'</div>'+
+          '</div>'+
+          '<div class="hist-fee">'+h.fee+'<span> บาท</span></div>';
+        $('histList').appendChild(div);
+      });
+    });
+  }
+
+  /* ══════════════════════════════════════
+     PROFILE — คำนวณ summary จาก history จริง
+     ของ slotId = "A1" เท่านั้น
+  ══════════════════════════════════════ */
+
+  /* A1 Live realtime listener */
+  function startA1LiveListener() {
+    if (a1LiveHandle) return; // ผูกแล้ว
+    a1LiveHandle = db.ref('parking/A1').on('value', function(snap) {
+      var d = snap.val();
+      if (!d) return;
+      var dist = parseFloat(d.distance) || 0;
+      var isOcc = d.status === 'occupied';
+
+      /* pill */
+      var pill = $('a1LivePill');
+      var pillTxt = $('a1LiveStatus');
+      pill.className = 'a1-live-pill' + (isOcc ? ' occupied' : '');
+      pillTxt.textContent = isOcc ? 'มีรถจอด' : 'ว่าง';
+
+      /* distance */
+      $('a1Dist').textContent = dist ? dist.toFixed(1) : '—';
+
+      /* session time + fee */
+      if (isOcc && d.startTime) {
+        var sec = Math.floor((Date.now() - d.startTime) / 1000);
+        var hh  = Math.floor(sec / 3600);
+        var mm  = Math.floor((sec % 3600) / 60);
+        $('a1SessionTime').textContent = hh + 'h ' + mm + 'm';
+        $('a1SessionFee').textContent  = Math.max(1, Math.ceil(sec / 3600)) * RATE;
+      } else {
+        /* ถ้า ESP32 ส่ง durationSec และ fee ตอนออก ก็ดึงมาแสดงได้ */
+        $('a1SessionTime').textContent = d.totalTime || '—';
+        $('a1SessionFee').textContent  = d.fee != null ? d.fee : '—';
+      }
+    });
+  }
+
+  /* ══ คำนวณ Summary จาก history ของ A1 ══ */
+  function loadA1Summary() {
+    /* ใส่ shimmer ก่อน */
+    ['sumVisits','sumPaid','sumHours','sumAvg'].forEach(function(id){
+      $(id).textContent = '—';
+    });
+    document.querySelectorAll('.sum-card').forEach(function(c){ c.classList.add('sum-loading'); });
+
+    /* ดึง history ทั้งหมดของ A1 */
+    db.ref('history').orderByChild('slotId').equalTo('A1').once('value').then(function(snap) {
+      var data = snap.val();
+      document.querySelectorAll('.sum-card').forEach(function(c){ c.classList.remove('sum-loading'); });
+
+      if (!data) {
+        $('sumVisits').textContent = '0';
+        $('sumPaid').textContent   = '0';
+        $('sumHours').textContent  = '0';
+        $('sumAvg').textContent    = '0';
+        return;
+      }
+
+      var entries    = Object.values(data);
+      var visits     = entries.length;
+      var totalSec   = entries.reduce(function(acc,h){ return acc + (h.duration||0); }, 0);
+      var totalFee   = entries.reduce(function(acc,h){ return acc + (h.fee||0);      }, 0);
+      var paidFee    = entries.filter(function(h){ return h.paid; })
+                              .reduce(function(acc,h){ return acc + (h.fee||0); }, 0);
+
+      $('sumVisits').textContent = visits;
+      $('sumPaid').textContent   = paidFee;
+      $('sumHours').textContent  = Math.floor(totalSec / 3600);
+      $('sumAvg').textContent    = visits ? Math.round(totalFee / visits) : 0;
+
+      /* ── Unpaid banner: คำนวณจาก history A1 ที่ยัง paid=false ── */
+      var unpaidFee   = entries.filter(function(h){ return !h.paid; })
+                               .reduce(function(acc,h){ return acc + (h.fee||0); }, 0);
+      var unpaidCount = entries.filter(function(h){ return !h.paid; }).length;
+
+      if (unpaidFee > 0) {
+        $('unpaidBanner').style.display = 'flex';
+        $('unpaidAmt').innerHTML = unpaidFee + ' <span style="font-size:.9rem">บาท</span>';
+        $('unpaidSessions').textContent = unpaidCount + ' รายการรอชำระ (A1)';
+      } else {
+        $('unpaidBanner').style.display = 'none';
+      }
+    });
+  }
+
+  function loadProfile() {
+    if (!currentUser) return;
+
+    /* เริ่ม listener A1 live */
+    startA1LiveListener();
+
+    /* โหลด summary จาก history A1 */
+    loadA1Summary();
+
+    /* โหลด user info */
+    db.ref('users/'+currentUser.uid).once('value').then(function(snap) {
+      var d = snap.val() || {};
+
+      var fname    = d.firstName || '';
+      var lname    = d.lastName  || '';
+      var full     = (fname+' '+lname).trim() || d.email || '—';
+      var initials = (fname[0]||'') + (lname[0]||'');
+      $('pfAvatar').textContent    = initials || (d.email||'?')[0].toUpperCase();
+      $('pfName').textContent      = full;
+      $('pfRole').textContent      = (d.role||'user').toUpperCase();
+      $('pfEmailDisp').textContent = d.email || currentUser.email || '—';
+
+      /* Form */
+      $('pfFirstName').value = d.firstName || '';
+      $('pfLastName').value  = d.lastName  || '';
+      $('pfEmail').value     = d.email     || currentUser.email || '';
+      $('pfPhone').value     = d.phone     || '';
+    });
+  }
+
+  /* Edit toggle */
+  $('pfEditBtn').addEventListener('click', function() {
+    pfEditing = !pfEditing;
+    var inputs = ['pfFirstName','pfLastName','pfEmail','pfPhone'];
+    inputs.forEach(function(id){ $(id).disabled = !pfEditing; });
+    $('pfEditBtn').textContent = pfEditing ? '✖ ยกเลิก' : '✏️ แก้ไข';
+    $('pfSaveBtn').className   = pfEditing ? 'pf-save-btn show' : 'pf-save-btn';
+  });
+
+  /* Save profile */
+  $('pfSaveBtn').addEventListener('click', function() {
+    if (!currentUser) return;
+    var fname = $('pfFirstName').value.trim();
+    var lname = $('pfLastName').value.trim();
+    var phone = $('pfPhone').value.trim();
+    var email = $('pfEmail').value.trim();
+
+    db.ref('users/'+currentUser.uid).update({
+      firstName: fname, lastName: lname,
+      phone: phone, email: email
+    }).then(function() {
+      toast('บันทึกข้อมูลสำเร็จ ✅');
+      pfEditing = false;
+      ['pfFirstName','pfLastName','pfEmail','pfPhone'].forEach(function(id){ $(id).disabled=true; });
+      $('pfEditBtn').textContent = '✏️ แก้ไข';
+      $('pfSaveBtn').className   = 'pf-save-btn';
+
+      var full = (fname+' '+lname).trim() || email || '—';
+      var initials = (fname[0]||'')+(lname[0]||'');
+      $('pfName').textContent      = full;
+      $('pfEmailDisp').textContent = email;
+      $('pfAvatar').textContent    = initials || (email||'?')[0].toUpperCase();
+    }).catch(function(err){ toast(err.message, 'error'); });
+  });
+
+  /* ── Pay button ── */
+  $('btnPay').addEventListener('click', function() {
+    if (!currentUser) return;
+    if (!confirm('ยืนยันการชำระเงินสำหรับ A1?')) return;
+
+    /* ดึง history ที่ยังค้างของ A1 */
+    db.ref('history').orderByChild('slotId').equalTo('A1').once('value').then(function(snap) {
+      var updates = {};
+      var paidTotal = 0;
+      snap.forEach(function(child) {
+        if (!child.val().paid) {
+          updates['history/'+child.key+'/paid'] = true;
+          paidTotal += child.val().fee || 0;
+        }
+      });
+
+      db.ref('users/'+currentUser.uid).once('value').then(function(uSnap) {
+        var d = uSnap.val() || {};
+        updates['users/'+currentUser.uid+'/totalPaid'] = (d.totalPaid||0) + paidTotal;
+        /* ✅ ลด unpaid ตามยอดที่จ่ายจริงเฉพาะ A1 */
+        updates['users/'+currentUser.uid+'/unpaid']    = Math.max(0, (d.unpaid||0) - paidTotal);
+
+        db.ref().update(updates).then(function() {
+          toast('ชำระเงินสำเร็จ 🎉');
+          loadA1Summary();
+          loadHistory();
+        });
+      });
+    });
+  });
+
+}); /* end loadSeq */
+</script>
+</body>
+</html>
